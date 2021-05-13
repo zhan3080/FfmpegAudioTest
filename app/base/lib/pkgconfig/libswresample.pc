@@ -1,0 +1,14 @@
+prefix=/Users/hzz/AndroidStudioProjects/android-FFmpeg/ffmpeg/android/armeabi-v7a
+exec_prefix=${prefix}
+libdir=/Users/hzz/AndroidStudioProjects/android-FFmpeg/ffmpeg/android/armeabi-v7a/lib
+includedir=/Users/hzz/AndroidStudioProjects/android-FFmpeg/ffmpeg/android/armeabi-v7a/include
+
+Name: libswresample
+Description: FFmpeg audio resampling library
+Version: 3.6.100
+Requires: libavutil >= 56.35.101
+Requires.private: 
+Conflicts:
+Libs: -L${libdir}  -lswresample -lm
+Libs.private: 
+Cflags: -I${includedir}

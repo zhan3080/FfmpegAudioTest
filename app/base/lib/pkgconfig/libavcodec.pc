@@ -1,0 +1,14 @@
+prefix=/Users/hzz/AndroidStudioProjects/android-FFmpeg/ffmpeg/android/armeabi-v7a
+exec_prefix=${prefix}
+libdir=/Users/hzz/AndroidStudioProjects/android-FFmpeg/ffmpeg/android/armeabi-v7a/lib
+includedir=/Users/hzz/AndroidStudioProjects/android-FFmpeg/ffmpeg/android/armeabi-v7a/include
+
+Name: libavcodec
+Description: FFmpeg codec library
+Version: 58.59.102
+Requires: libswresample >= 3.6.100, libavutil >= 56.35.101
+Requires.private: 
+Conflicts:
+Libs: -L${libdir}  -lavcodec -pthread -lm -lz
+Libs.private: 
+Cflags: -I${includedir}

@@ -1,0 +1,18 @@
+include及lib是从ffmpeg编译出来后，拷贝过来的
+git地址：git@github.com:zhan3080/FFMPEG_ANDROID.git
+
+
+ffmpeg使用build_one.sh(编译动态库，或者静态库)编译，能正常运行
+
+1、multi_so目录，是使用build_one.sh编译出来的多个so，编译出libffplayer.so,然后java层加载所有so（ffmpeg编译出来的8个so，及libffplayer.so）
+
+2、base跟目录，是使用build_one.sh编译出来的多个.a，编译到一个so（libffplayer.so）里，java层只加载一个so（libffplayer.so）
+
+
+
+20210513(实现)
+1、编译libffplayer.so,实现从mp4文件里分离解码出音频文件并且保存成pcm数据文件（audioPlayer.c）
+2、不经过重采样，解码出pcm原样保存到文件，保存文件后，可以使用ffplay命令播放
+测试命令：ffplay -ar sample_rate -ac channels -f sample_fmt -i output.pcm
+如：ffplay -ar 48000 -ac 1 -f f32le -i output.pcm
+采样率、声道、音频格式，从音频解码器上下文里取（acodec_ctx->sample_rate, acodec_ctx->channels, acodec_ctx->sample_fmt）
