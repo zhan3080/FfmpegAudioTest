@@ -23,19 +23,70 @@ FILE *file = NULL;
 
 AVCodecContext *acodec_ctx;
 AVCodec *acodec;
+SwrContext   *m_SwrContext;
 
 //dst frame data size
-int           m_DstFrameDataSze = 0;
+// 音频编码采样率
+static const int AUDIO_DST_SAMPLE_RATE = 44100;
+// 音频编码通道数
+static const int AUDIO_DST_CHANNEL_COUNTS = 2;
+// 音频格式
+const enum AVSampleFormat DST_SAMPLT_FORMAT = AV_SAMPLE_FMT_S16;
+// 音频编码声道格式
+static const uint64_t AUDIO_DST_CHANNEL_LAYOUT = AV_CH_LAYOUT_STEREO;
+// ACC音频一帧采样数
+static const int ACC_NB_SAMPLES = 1024;
+//number of sample per channel
+int m_nbSamples = 0;
+
+//dst frame data size
+int m_DstFrameDataSze = 0;
+uint8_t *m_AudioOutBuffer = NULL;
+
+//设置重采样参数
+void initAudio(AVCodecContext *codeCtx)
+{
+
+    m_SwrContext = swr_alloc();
+
+    av_opt_set_int(m_SwrContext, "in_channel_layout", codeCtx->channel_layout, 0);
+    av_opt_set_int(m_SwrContext, "out_channel_layout", AUDIO_DST_CHANNEL_LAYOUT, 0);
+
+    av_opt_set_int(m_SwrContext, "in_sample_rate", codeCtx->sample_rate, 0);
+    av_opt_set_int(m_SwrContext, "out_sample_rate", AUDIO_DST_SAMPLE_RATE, 0);
+
+    av_opt_set_sample_fmt(m_SwrContext, "in_sample_fmt", codeCtx->sample_fmt, 0);
+    av_opt_set_sample_fmt(m_SwrContext, "out_sample_fmt", DST_SAMPLT_FORMAT,  0);
+
+    swr_init(m_SwrContext);
+    LogI(TAG, DEBUG, "initAudioaudio metadata sample rate: %d, channel: %d, format: %d, frame_size: %d, layout: %lld",
+             codeCtx->sample_rate, codeCtx->channels, codeCtx->sample_fmt, codeCtx->frame_size,codeCtx->channel_layout);
+    // resample params
+    m_nbSamples = (int)av_rescale_rnd(ACC_NB_SAMPLES, AUDIO_DST_SAMPLE_RATE, codeCtx->sample_rate, AV_ROUND_UP);
+    LogE(TAG, DEBUG, "initAudio [m_nbSamples, m_DstFrameDataSze]=[%d]", m_nbSamples);
+    m_DstFrameDataSze = av_samples_get_buffer_size(NULL, AUDIO_DST_CHANNEL_COUNTS,m_nbSamples, DST_SAMPLT_FORMAT, 1);
+
+    LogE(TAG, DEBUG, "initAudio [m_nbSamples, m_DstFrameDataSze]=[%d, %d]", m_nbSamples, m_DstFrameDataSze);
+
+    m_AudioOutBuffer = (uint8_t *) malloc(m_DstFrameDataSze);
+}
 
 void OnFrameAvailable(AVCodecContext *acodec_ctx, AVFrame *frame)
 {
-    //LogI(TAG, DEBUG, "OnFrameAvailable frame=%p, frame->nb_samples=%d", frame, frame->nb_samples);
+
     if(file != NULL)
+    {
+        // 重采样后保存音频，也没问题（这个大小有点疑问m_DstFrameDataSze / 2）
+        int result = swr_convert(m_SwrContext, &m_AudioOutBuffer, m_DstFrameDataSze / 2, (const uint8_t **) frame->data, frame->nb_samples);
+        fwrite(m_AudioOutBuffer, 1, m_DstFrameDataSze, file);
+    }
+    //LogI(TAG, DEBUG, "OnFrameAvailable frame=%p, frame->nb_samples=%d", frame, frame->nb_samples);
+    /*if(file != NULL)
     {
         m_DstFrameDataSze = av_get_bytes_per_sample(acodec_ctx->sample_fmt);
         //LogI(TAG, DEBUG, "OnFrameAvailable acodec_ctx->sample_fmt=%d, m_DstFrameDataSze=%d", acodec_ctx->sample_fmt, m_DstFrameDataSze);
         if (m_DstFrameDataSze < 0) {
-            /* This should not occur, checking just for paranoia */
+            //This should not occur, checking just for paranoia
             LogE(TAG, DEBUG, "Failed to calculate data size");
             return;
         }
@@ -45,7 +96,7 @@ void OnFrameAvailable(AVCodecContext *acodec_ctx, AVFrame *frame)
                 fwrite(frame->data[ch] + m_DstFrameDataSze*i, 1, m_DstFrameDataSze, file);
         }
 
-    }
+    }*/
 
 }
 
@@ -113,6 +164,8 @@ void* play_audio(void *argv)
         }
         LogI(TAG, DEBUG, "initAudioaudio metadata sample rate: %d, channel: %d, format: %d, frame_size: %d, layout: %lld",
              acodec_ctx->sample_rate, acodec_ctx->channels, acodec_ctx->sample_fmt, acodec_ctx->frame_size,acodec_ctx->channel_layout);
+
+        initAudio(acodec_ctx);
         //9.创建存储编码数据和解码数据的结构体
         m_Packet = av_packet_alloc(); //创建 AVPacket 存放编码数据
         m_Frame = av_frame_alloc(); //创建 AVFrame 存放解码后的数据
