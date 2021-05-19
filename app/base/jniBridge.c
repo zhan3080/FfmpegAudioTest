@@ -18,6 +18,7 @@ void base_hello(JNIEnv * env,jobject obj);
 void pcmDecode(JNIEnv* env, jobject thiz);
 
 extern void* play_audio(void *argv);
+extern void* decode_audio(void *argv);
 
 static JNINativeMethod gMethods[] =
 {
@@ -39,7 +40,7 @@ static int registerFFplayer(JNIEnv *env, jclass cls){
 */
 jint JNI_OnLoad(JavaVM* vm, void *reserved)
 {
-    LogE(TAG, DEBUG, "JNI_OnLoad");
+    LogI(TAG, DEBUG, "JNI_OnLoad");
     JNIEnv* env = NULL;
     if((*vm)->GetEnv(vm,(void **)&env,JNI_VERSION_1_4) != JNI_OK){
         LogE(TAG, DEBUG, "JNI_OnLoad GetEnv error");
@@ -68,6 +69,7 @@ void pcmDecode(JNIEnv* env, jobject obj)
 {
     LogE(TAG,DEBUG, "pcmDecode play_audio");
     pthread_t thread;
+    //pthread_create(&thread, NULL, decode_audio, NULL);
     pthread_create(&thread, NULL, play_audio, NULL);
     return ;
 }

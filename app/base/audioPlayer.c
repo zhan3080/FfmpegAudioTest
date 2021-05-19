@@ -100,9 +100,9 @@ void OnFrameAvailable(AVCodecContext *acodec_ctx, AVFrame *frame)
 
 }
 
-void* play_audio(void *argv)
+void* decode_audio(void *argv)
 {
-    LogI(TAG, DEBUG, "play_audio begin");
+    LogI(TAG, DEBUG, "decode_audio begin");
     int i = 0;
     int err = 0;
     int framecnt = 0;
@@ -122,27 +122,27 @@ void* play_audio(void *argv)
     err = avformat_open_input(&fmt_ctx, TEST_URL, NULL, NULL);
     if(err < 0)
     {
-        LogE(TAG, DEBUG, "play_audio avformat_open_input fail err:" + err);
+        LogE(TAG, DEBUG, "decode_audio avformat_open_input fail err:" + err);
         goto failure;
     }
-    LogI(TAG, DEBUG, "play_audio avformat_find_stream_info");
+    LogI(TAG, DEBUG, "decode_audio avformat_find_stream_info");
     //3.获取音视频流信息
     if((err == avformat_find_stream_info(fmt_ctx,NULL)) < 0)
     {
-        LogE(TAG, DEBUG, "play_audio avformat_find_stream_info fail err:" + err);
+        LogE(TAG, DEBUG, "decode_audio avformat_find_stream_info fail err:" + err);
         goto failure;
     }
 
     //4.获取音视频流索引
     for(i = 0; i < fmt_ctx->nb_streams; i++)
     {
-        LogE(TAG, DEBUG, "play_audio codec_type %d",fmt_ctx->streams[i]->codec->codec_type);
+        LogE(TAG, DEBUG, "decode_audio codec_type %d",fmt_ctx->streams[i]->codec->codec_type);
         if(fmt_ctx->streams[i]->codec->codec_type == AVMEDIA_TYPE_AUDIO)
         {
             audio_stream_index = i;
         }
     }
-    LogE(TAG, DEBUG, "play_audio audio_stream_index %d",audio_stream_index);
+    LogE(TAG, DEBUG, "decode_audio audio_stream_index %d",audio_stream_index);
 
     if(-1 != audio_stream_index)
     {
@@ -154,13 +154,13 @@ void* play_audio(void *argv)
 
         if(avcodec_open2(acodec_ctx,acodec, NULL) < 0)
         {
-            LogE(TAG, DEBUG, "play_media avcodec_open2 fail");
+            LogE(TAG, DEBUG, "decode_audio avcodec_open2 fail");
             goto failure;
         }
 
         if((file=fopen(OUTPUT_FILE,"wb+"))==NULL)
         {
-            LogE(TAG, DEBUG, "play_media fopen error");
+            LogE(TAG, DEBUG, "decode_audio fopen error");
         }
         LogI(TAG, DEBUG, "initAudioaudio metadata sample rate: %d, channel: %d, format: %d, frame_size: %d, layout: %lld",
              acodec_ctx->sample_rate, acodec_ctx->channels, acodec_ctx->sample_fmt, acodec_ctx->frame_size,acodec_ctx->channel_layout);
@@ -176,7 +176,7 @@ void* play_audio(void *argv)
             {
                 if (avcodec_send_packet(acodec_ctx, m_Packet) != 0) 
                 { //视频解码
-                    LogE(TAG, DEBUG, "play_audio avcodec_send_packet fail");
+                    LogE(TAG, DEBUG, "decode_audio avcodec_send_packet fail");
                     goto failure;
                 }
                 while (avcodec_receive_frame(acodec_ctx, m_Frame) == 0) 
@@ -184,11 +184,11 @@ void* play_audio(void *argv)
                     OnFrameAvailable(acodec_ctx,m_Frame);
                 }
                 av_packet_unref(m_Packet);//释放 m_Packet 引用，防止内存泄漏
-                //LogI(TAG, DEBUG, "play_audio av_init_packet");
+                //LogI(TAG, DEBUG, "decode_audio av_init_packet");
                 av_init_packet(m_Packet);
             }
         
-            //LogI(TAG, DEBUG, "play_audio usleep");
+            //LogI(TAG, DEBUG, "decode_audio usleep");
             usleep(10000);
         }
     }
@@ -224,6 +224,6 @@ void* play_audio(void *argv)
         avformat_free_context(fmt_ctx);
     }
     avformat_network_deinit();
-    LogI(TAG, DEBUG, "play_audio end");
+    LogI(TAG, DEBUG, "decode_audio end");
     return 0;
 }

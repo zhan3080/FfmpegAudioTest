@@ -12,44 +12,47 @@
 #include <unistd.h>
 #include "OpenSLRender.h"
 
-void Init() {
-    LogE(TAG,DEBUG, "Init");
+#define OUTPUT_FILE "/sdcard/output.pcm"
+
+FILE *pcmFile;
+void *buffer;
+uint8_t *out_buffer;
+
+void InitSL() {
+    LogI(TAG,DEBUG, "Init");
     int result = -1;
-    do {
-        result = CreateEngine();
-        if(result != SL_RESULT_SUCCESS)
-        {
-            LOGCATE("OpenSLRender::Init CreateEngine fail. result=%d", result);
-            break;
-        }
+    result = CreateEngine();
+    if(result != SL_RESULT_SUCCESS)
+    {
+        LogE(TAG,DEBUG, "OpenSLRender::InitSL CreateEngine fail. result=%d", result);
+        return;
+    }
 
-        result = CreateOutputMixer();
-        if(result != SL_RESULT_SUCCESS)
-        {
-            LOGCATE("OpenSLRender::Init CreateOutputMixer fail. result=%d", result);
-            break;
-        }
+    result = CreateOutputMixer();
+    if(result != SL_RESULT_SUCCESS)
+    {
+        LogE(TAG,DEBUG, "OpenSLRender::InitSL CreateOutputMixer fail. result=%d", result);
+        return;
+    }
 
-        result = CreateAudioPlayer();
-        if(result != SL_RESULT_SUCCESS)
-        {
-            LOGCATE("OpenSLRender::Init CreateAudioPlayer fail. result=%d", result);
-            break;
-        }
+    result = CreateAudioPlayer();
+    if(result != SL_RESULT_SUCCESS)
+    {
+        LogE(TAG,DEBUG, "OpenSLRender::InitSL CreateAudioPlayer fail. result=%d", result);
+        return;
+    }
 
-        m_thread = new std::thread(CreateSLWaitingThread, this);
-
-    } while (false);
+    //pthread_create(m_thread, NULL, CreateSLWaitingThread, NULL);
 
     if(result != SL_RESULT_SUCCESS) {
-        LOGCATE("OpenSLRender::Init fail. result=%d", result);
-        UnInit();
-    }*/
+        LogE(TAG,DEBUG, "OpenSLRender::InitSL fail. result=%d", result);
+        UnInitSL();
+    }
 
 }
 
 void renderAudioFrame(uint8_t *pData, int dataSize) {
-    LogE(TAG,DEBUG, "Init renderAudioFrame pData=%p, dataSize=%d",pData, dataSize);
+    LogE(TAG,DEBUG, "renderAudioFrame pData=%p, dataSize=%d",pData, dataSize);
     /*if(m_AudioPlayerPlay) {
         if (pData != nullptr && dataSize > 0) {
 
@@ -68,116 +71,86 @@ void renderAudioFrame(uint8_t *pData, int dataSize) {
     }*/
 }
 
-void unInit() {
-    LogE(TAG,DEBUG, "UnInit");
+void unInitSL() {
+    LogE(TAG,DEBUG, "unInitSL");
 
-    /*if (m_AudioPlayerPlay) {
+    if (m_AudioPlayerPlay) {
         (*m_AudioPlayerPlay)->SetPlayState(m_AudioPlayerPlay, SL_PLAYSTATE_STOPPED);
-        m_AudioPlayerPlay = nullptr;
+        m_AudioPlayerPlay = NULL;
     }
-
-    std::unique_lock<std::mutex> lock(m_Mutex);
-    m_Exit = true;
-    m_Cond.notify_all();
-    lock.unlock();
 
     if (m_AudioPlayerObj) {
         (*m_AudioPlayerObj)->Destroy(m_AudioPlayerObj);
-        m_AudioPlayerObj = nullptr;
-        m_BufferQueue = nullptr;
+        m_AudioPlayerObj = NULL;
+        m_BufferQueue = NULL;
     }
 
     if (m_OutputMixObj) {
         (*m_OutputMixObj)->Destroy(m_OutputMixObj);
-        m_OutputMixObj = nullptr;
+        m_OutputMixObj = NULL;
     }
 
     if (m_EngineObj) {
         (*m_EngineObj)->Destroy(m_EngineObj);
-        m_EngineObj = nullptr;
-        m_EngineEngine = nullptr;
+        m_EngineObj = NULL;
+        m_EngineEngine = NULL;
     }
 
-    lock.lock();
-    for (int i = 0; i < m_AudioFrameQueue.size(); ++i) {
-        AudioFrame *audioFrame = m_AudioFrameQueue.front();
-        m_AudioFrameQueue.pop();
-        delete audioFrame;
-    }
-    lock.unlock();
+}
 
-    if(m_thread != nullptr)
+int CreateEngine() {
+    LogI(TAG,DEBUG, "CreateEngine");
+    SLresult result = SL_RESULT_SUCCESS;
+    result = slCreateEngine(&m_EngineObj, 0, NULL, 0, NULL, NULL);
+    if(result != SL_RESULT_SUCCESS)
     {
-        m_thread->join();
-        delete m_thread;
-        m_thread = nullptr;
+        LogE(TAG,DEBUG, "OpenSLRender::CreateEngine slCreateEngine fail. result=%d", result);
+        return -1;
     }
 
-    AudioGLRender::ReleaseInstance();*/
+    result = (*m_EngineObj)->Realize(m_EngineObj, SL_BOOLEAN_FALSE);
+    if(result != SL_RESULT_SUCCESS)
+    {
+        LogE(TAG,DEBUG, "OpenSLRender::CreateEngine Realize fail. result=%d", result);
+        return -1;
+    }
 
+    result = (*m_EngineObj)->GetInterface(m_EngineObj, SL_IID_ENGINE, &m_EngineEngine);
+    if(result != SL_RESULT_SUCCESS)
+    {
+        LogE(TAG,DEBUG, "OpenSLRender::CreateEngine GetInterface fail. result=%d", result);
+        return -1;
+    }
+
+    return result;
 }
 
-int createEngine() {
-    LogE(TAG,DEBUG, "CreateEngine");
-    return 0;
-    /*SLresult result = SL_RESULT_SUCCESS;
-    do {
-        result = slCreateEngine(&m_EngineObj, 0, nullptr, 0, nullptr, nullptr);
-        if(result != SL_RESULT_SUCCESS)
-        {
-            LOGCATE("OpenSLRender::CreateEngine slCreateEngine fail. result=%d", result);
-            break;
-        }
-
-        result = (*m_EngineObj)->Realize(m_EngineObj, SL_BOOLEAN_FALSE);
-        if(result != SL_RESULT_SUCCESS)
-        {
-            LOGCATE("OpenSLRender::CreateEngine Realize fail. result=%d", result);
-            break;
-        }
-
-        result = (*m_EngineObj)->GetInterface(m_EngineObj, SL_IID_ENGINE, &m_EngineEngine);
-        if(result != SL_RESULT_SUCCESS)
-        {
-            LOGCATE("OpenSLRender::CreateEngine GetInterface fail. result=%d", result);
-            break;
-        }
-
-    } while (false);
-    return result;*/
-}
-
-int createOutputMixer() {
+int CreateOutputMixer() {
     LogI(TAG,DEBUG, "createOutputMixer");
-    return 0;
-    /*SLresult result = SL_RESULT_SUCCESS;
-    do {
-        const SLInterfaceID mids[1] = {SL_IID_ENVIRONMENTALREVERB};
-        const SLboolean mreq[1] = {SL_BOOLEAN_FALSE};
+    SLresult result = SL_RESULT_SUCCESS;
+    const SLInterfaceID mids[1] = {SL_IID_ENVIRONMENTALREVERB};
+    const SLboolean mreq[1] = {SL_BOOLEAN_FALSE};
 
-        result = (*m_EngineEngine)->CreateOutputMix(m_EngineEngine, &m_OutputMixObj, 1, mids, mreq);
-        if(result != SL_RESULT_SUCCESS)
-        {
-            LOGCATE("OpenSLRender::CreateOutputMixer CreateOutputMix fail. result=%d", result);
-            break;
-        }
+    result = (*m_EngineEngine)->CreateOutputMix(m_EngineEngine, &m_OutputMixObj, 1, mids, mreq);
+    if(result != SL_RESULT_SUCCESS)
+    {
+        LogE(TAG,DEBUG, "OpenSLRender::CreateOutputMixer CreateOutputMix fail. result=%d", result);
+        return -1;
+    }
 
-        result = (*m_OutputMixObj)->Realize(m_OutputMixObj, SL_BOOLEAN_FALSE);
-        if(result != SL_RESULT_SUCCESS)
-        {
-            LOGCATE("OpenSLRender::CreateOutputMixer CreateOutputMix fail. result=%d", result);
-            break;
-        }
+    result = (*m_OutputMixObj)->Realize(m_OutputMixObj, SL_BOOLEAN_FALSE);
+    if(result != SL_RESULT_SUCCESS)
+    {
+        LogE(TAG,DEBUG, "OpenSLRender::CreateOutputMixer CreateOutputMix fail. result=%d", result);
+        return -1;
+    }
 
-    } while (false);
-
-    return result;*/
+    return result;
 }
 
-int createAudioPlayer() {
+int CreateAudioPlayer() {
     LogI(TAG,DEBUG, "createAudioPlayer");
-    return 0;
-    /*SLDataLocator_AndroidSimpleBufferQueue android_queue = {SL_DATALOCATOR_ANDROIDSIMPLEBUFFERQUEUE, 2};
+    SLDataLocator_AndroidSimpleBufferQueue android_queue = {SL_DATALOCATOR_ANDROIDSIMPLEBUFFERQUEUE, 2};
     SLDataFormat_PCM pcm = {
             SL_DATAFORMAT_PCM,//format type
             (SLuint32)2,//channel count
@@ -190,122 +163,109 @@ int createAudioPlayer() {
     SLDataSource slDataSource = {&android_queue, &pcm};
 
     SLDataLocator_OutputMix outputMix = {SL_DATALOCATOR_OUTPUTMIX, m_OutputMixObj};
-    SLDataSink slDataSink = {&outputMix, nullptr};
+    SLDataSink slDataSink = {&outputMix, NULL};
 
     const SLInterfaceID ids[3] = {SL_IID_BUFFERQUEUE, SL_IID_EFFECTSEND, SL_IID_VOLUME};
     const SLboolean req[3] = {SL_BOOLEAN_TRUE, SL_BOOLEAN_TRUE, SL_BOOLEAN_TRUE};
 
     SLresult result;
 
-    do {
 
-        result = (*m_EngineEngine)->CreateAudioPlayer(m_EngineEngine, &m_AudioPlayerObj, &slDataSource, &slDataSink, 3, ids, req);
-        if(result != SL_RESULT_SUCCESS)
-        {
-            LOGCATE("OpenSLRender::CreateAudioPlayer CreateAudioPlayer fail. result=%d", result);
-            break;
-        }
+    result = (*m_EngineEngine)->CreateAudioPlayer(m_EngineEngine, &m_AudioPlayerObj, &slDataSource, &slDataSink, 3, ids, req);
+    if(result != SL_RESULT_SUCCESS)
+    {
+        LogE(TAG,DEBUG, "OpenSLRender::CreateAudioPlayer CreateAudioPlayer fail. result=%d", result);
+        return -1;
+    }
 
-        result = (*m_AudioPlayerObj)->Realize(m_AudioPlayerObj, SL_BOOLEAN_FALSE);
-        if(result != SL_RESULT_SUCCESS)
-        {
-            LOGCATE("OpenSLRender::CreateAudioPlayer Realize fail. result=%d", result);
-            break;
-        }
+    result = (*m_AudioPlayerObj)->Realize(m_AudioPlayerObj, SL_BOOLEAN_FALSE);
+    if(result != SL_RESULT_SUCCESS)
+    {
+        LogE(TAG,DEBUG, "OpenSLRender::CreateAudioPlayer Realize fail. result=%d", result);
+        return -1;
+    }
 
-        result = (*m_AudioPlayerObj)->GetInterface(m_AudioPlayerObj, SL_IID_PLAY, &m_AudioPlayerPlay);
-        if(result != SL_RESULT_SUCCESS)
-        {
-            LOGCATE("OpenSLRender::CreateAudioPlayer GetInterface fail. result=%d", result);
-            break;
-        }
+    result = (*m_AudioPlayerObj)->GetInterface(m_AudioPlayerObj, SL_IID_PLAY, &m_AudioPlayerPlay);
+    if(result != SL_RESULT_SUCCESS)
+    {
+        LogE(TAG,DEBUG, "OpenSLRender::CreateAudioPlayer GetInterface fail. result=%d", result);
+        return -1;
+    }
 
-        result = (*m_AudioPlayerObj)->GetInterface(m_AudioPlayerObj, SL_IID_BUFFERQUEUE, &m_BufferQueue);
-        if(result != SL_RESULT_SUCCESS)
-        {
-            LOGCATE("OpenSLRender::CreateAudioPlayer GetInterface fail. result=%d", result);
-            break;
-        }
+    result = (*m_AudioPlayerObj)->GetInterface(m_AudioPlayerObj, SL_IID_BUFFERQUEUE, &m_BufferQueue);
+    if(result != SL_RESULT_SUCCESS)
+    {
+        LogE(TAG,DEBUG, "OpenSLRender::CreateAudioPlayer GetInterface fail. result=%d", result);
+        return -1;
+    }
 
-        result = (*m_BufferQueue)->RegisterCallback(m_BufferQueue, AudioPlayerCallback, this);
-        if(result != SL_RESULT_SUCCESS)
-        {
-            LOGCATE("OpenSLRender::CreateAudioPlayer RegisterCallback fail. result=%d", result);
-            break;
-        }
+    result = (*m_BufferQueue)->RegisterCallback(m_BufferQueue, AudioPlayerCallback, NULL);
+    if(result != SL_RESULT_SUCCESS)
+    {
+        LogE(TAG,DEBUG, "OpenSLRender::CreateAudioPlayer RegisterCallback fail. result=%d", result);
+        return -1;
+    }
 
-        result = (*m_AudioPlayerObj)->GetInterface(m_AudioPlayerObj, SL_IID_VOLUME, &m_AudioPlayerVolume);
-        if(result != SL_RESULT_SUCCESS)
-        {
-            LOGCATE("OpenSLRender::CreateAudioPlayer GetInterface fail. result=%d", result);
-            break;
-        }
+    result = (*m_AudioPlayerObj)->GetInterface(m_AudioPlayerObj, SL_IID_VOLUME, &m_AudioPlayerVolume);
+    if(result != SL_RESULT_SUCCESS)
+    {
+        LogE(TAG,DEBUG, "OpenSLRender::CreateAudioPlayer GetInterface fail. result=%d", result);
+        return -1;
+    }
 
-    } while (false);
 
-    return result;*/
+    return result;
 }
 
 void startRender() {
     LogI(TAG,DEBUG, "startRender");
-    /*while (GetAudioFrameQueueSize() < MAX_QUEUE_BUFFER_SIZE && !m_Exit) {
-        std::unique_lock<std::mutex> lock(m_Mutex);
-        m_Cond.wait_for(lock, std::chrono::milliseconds(10));
-        //m_Cond.wait(lock);
-        lock.unlock();
-    }
-
     (*m_AudioPlayerPlay)->SetPlayState(m_AudioPlayerPlay, SL_PLAYSTATE_PLAYING);
-    AudioPlayerCallback(m_BufferQueue, this);*/
+    AudioPlayerCallback(m_BufferQueue, NULL);
 }
 
-void handleAudioFrameQueue() {
-    LogI(TAG,DEBUG, "handleAudioFrameQueue");
 
-    /*LOGCATE("OpenSLRender::HandleAudioFrameQueue QueueSize=%lu", m_AudioFrameQueue.size());
-    if (m_AudioPlayerPlay == nullptr) return;
-
-    while (GetAudioFrameQueueSize() < MAX_QUEUE_BUFFER_SIZE && !m_Exit) {
-        std::unique_lock<std::mutex> lock(m_Mutex);
-        m_Cond.wait_for(lock, std::chrono::milliseconds(10));
-    }
-
-    std::unique_lock<std::mutex> lock(m_Mutex);
-    AudioFrame *audioFrame = m_AudioFrameQueue.front();
-    if (nullptr != audioFrame && m_AudioPlayerPlay) {
-        SLresult result = (*m_BufferQueue)->Enqueue(m_BufferQueue, audioFrame->data, (SLuint32) audioFrame->dataSize);
-        if (result == SL_RESULT_SUCCESS) {
-            AudioGLRender::GetInstance()->UpdateAudioFrame(audioFrame);
-            m_AudioFrameQueue.pop();
-            delete audioFrame;
+void getPcmData(void **pcm)
+{
+    while(!feof(pcmFile))
+    {
+        fread(out_buffer, 44100 * 2 * 2, 1, pcmFile);
+        if(out_buffer == NULL)
+        {
+            LogE(TAG,DEBUG,"read end");
+            break;
+        } else{
+            LogI(TAG,DEBUG,"reading");
         }
-
+        *pcm = out_buffer;
+        break;
     }
-    lock.unlock();*/
-
 }
 
-/*
-void OpenSLRender::CreateSLWaitingThread(OpenSLRender *openSlRender) {
-    openSlRender->StartRender();
-}
+void AudioPlayerCallback(SLAndroidSimpleBufferQueueItf bufferQueue, void *context) {
 
-void OpenSLRender::AudioPlayerCallback(SLAndroidSimpleBufferQueueItf bufferQueue, void *context) {
-    OpenSLRender *openSlRender = static_cast<OpenSLRender *>(context);
-    openSlRender->HandleAudioFrameQueue();
-}
-
-int OpenSLRender::GetAudioFrameQueueSize() {
-    std::unique_lock<std::mutex> lock(m_Mutex);
-    return m_AudioFrameQueue.size();
-}
-
-void OpenSLRender::ClearAudioCache() {
-    std::unique_lock<std::mutex> lock(m_Mutex);
-    for (int i = 0; i < m_AudioFrameQueue.size(); ++i) {
-        AudioFrame *audioFrame = m_AudioFrameQueue.front();
-        m_AudioFrameQueue.pop();
-        delete audioFrame;
+    getPcmData(&buffer);
+    // for streaming playback, replace this test by logic to find and fill the next buffer
+    if (NULL != buffer) {
+        SLresult result;
+        // enqueue another buffer
+        result = (*bufferQueue)->Enqueue(bufferQueue, buffer, 44100 * 2 * 2);
     }
+}
 
-}*/
+
+void* play_audio(void *argv)
+{
+    LogI(TAG, DEBUG, "play_audio begin");
+    pcmFile = fopen(OUTPUT_FILE, "r");
+    if(pcmFile == NULL)
+    {
+        LogE(TAG,DEBUG,"fopen file error");
+        return NULL;
+    }
+    out_buffer = malloc(44100 * 2 * 2);
+    unInitSL();
+    InitSL();
+    startRender();
+    LogI(TAG,DEBUG,"play_audio end");
+    return NULL;
+}

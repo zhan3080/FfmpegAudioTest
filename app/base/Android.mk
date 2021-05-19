@@ -46,13 +46,14 @@ LOCAL_MODULE    := ffplayer
 #sourcecode for ffplayer
 LOCAL_SRC_FILES := \
     jniBridge.c \
-	audioPlayer.c \
+	openSLRender.c \
+
+#audioPlayer.c \
 
 LOCAL_C_INCLUDES := \
 	$(LOCAL_PATH) \
-	$(LOCAL_PATH)/logger.h
-
-#	$(LOCAL_PATH)/openSLRender.h
+	$(LOCAL_PATH)/logger.h \
+	$(LOCAL_PATH)/openSLRender.h
 
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/include
 #LOCAL_C_INCLUDES += $(LOCAL_PATH)/include/libavfilter
@@ -64,7 +65,7 @@ LOCAL_C_INCLUDES += $(LOCAL_PATH)/include
 
 
 
-LOCAL_LDLIBS := -llog -lz -landroid
+LOCAL_LDLIBS := -llog -lz -landroid -lOpenSLES
 
 #LOCAL_STATIC_LIBRARIES := libavcodec libavfilter libavformat libavutil libswresample libswscale libavdevice libpostproc
 #顺序很重要

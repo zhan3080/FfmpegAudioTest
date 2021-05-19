@@ -11,17 +11,16 @@
 
 #define MAX_QUEUE_BUFFER_SIZE 3
 
-void Init();
+void InitSL();
 void ClearAudioCache();
 void RenderAudioFrame(uint8_t *pData, int dataSize);
-void UnInit();
+void UnInitSL();
 int CreateEngine();
 int CreateOutputMixer();
 int CreateAudioPlayer();
 int GetAudioFrameQueueSize();
 void StartRender();
 void HandleAudioFrameQueue();
-static void CreateSLWaitingThread(OpenSLRender *openSlRender);
 static void AudioPlayerCallback(SLAndroidSimpleBufferQueueItf bufferQueue, void *context);
 
 SLObjectItf m_EngineObj = NULL;
@@ -32,11 +31,12 @@ SLPlayItf m_AudioPlayerPlay = NULL;
 SLVolumeItf m_AudioPlayerVolume = NULL;
 SLAndroidSimpleBufferQueueItf m_BufferQueue;
 
-// queue<AudioFrame *> m_AudioFrameQueue;
-pthread *m_thread = NULL;
-mutex   m_Mutex;
-condition_variable m_Cond;
-volatile bool m_Exit = false;
+//queue<AudioFrame *> m_AudioFrameQueue;
+//pthread *m_thread = NULL;
+//mutex   m_Mutex;
+//static pthread_mutex_t m_Mutex = PTHREAD_MUTEX_INITIALIZER;
+//condition_variable m_Cond;
+//volatile bool m_Exit = false;
 
 
 #endif //LEARNFFMPEG_OPENSLRENDER_H
