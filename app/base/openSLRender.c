@@ -243,6 +243,7 @@ void getPcmData(void **pcm)
 
 void AudioPlayerCallback(SLAndroidSimpleBufferQueueItf bufferQueue, void *context) {
 
+    LogI(TAG, DEBUG, "AudioPlayerCallback get buffer");
     getPcmData(&buffer);
     // for streaming playback, replace this test by logic to find and fill the next buffer
     if (NULL != buffer) {
