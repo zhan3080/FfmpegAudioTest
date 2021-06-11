@@ -17,6 +17,9 @@
 #define TAG "ffmpeg_audioPlayer"
 #define DEBUG true
 
+
+extern void pcm_write(uint8_t *out_buffer, int out_buffer_size);
+
 #define TEST_URL "/sdcard/t.mp4"
 #define OUTPUT_FILE "/sdcard/output.pcm"
 FILE *file = NULL;
@@ -73,12 +76,13 @@ void initAudio(AVCodecContext *codeCtx)
 
 void OnFrameAvailable(AVCodecContext *acodec_ctx, AVFrame *frame)
 {
-
+    LogI(TAG, DEBUG, "OnFrameAvailable frame=%p, frame->nb_samples=%d", frame, frame->nb_samples);
     if(file != NULL)
     {
         // 重采样后保存音频，也没问题（这个大小有点疑问m_DstFrameDataSze / 2）
         int result = swr_convert(m_SwrContext, &m_AudioOutBuffer, m_DstFrameDataSze / 2, (const uint8_t **) frame->data, frame->nb_samples);
-        fwrite(m_AudioOutBuffer, 1, m_DstFrameDataSze, file);
+        //fwrite(m_AudioOutBuffer, 1, m_DstFrameDataSze, file);
+        pcm_write(m_AudioOutBuffer, m_DstFrameDataSze);
     }
     //LogI(TAG, DEBUG, "OnFrameAvailable frame=%p, frame->nb_samples=%d", frame, frame->nb_samples);
     /*if(file != NULL)

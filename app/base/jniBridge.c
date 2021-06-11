@@ -19,6 +19,7 @@ void pcmDecode(JNIEnv* env, jobject thiz);
 
 extern void* play_audio(void *argv);
 extern void* decode_audio(void *argv);
+extern void* jni_onload_audioTrack_player(JavaVM* vm, JNIEnv* env);
 
 static JNINativeMethod gMethods[] =
 {
@@ -42,6 +43,7 @@ jint JNI_OnLoad(JavaVM* vm, void *reserved)
 {
     LogI(TAG, DEBUG, "JNI_OnLoad");
     JNIEnv* env = NULL;
+    ff_jni_set_java_vm(vm);
     if((*vm)->GetEnv(vm,(void **)&env,JNI_VERSION_1_4) != JNI_OK){
         LogE(TAG, DEBUG, "JNI_OnLoad GetEnv error");
         return -1;
@@ -49,6 +51,7 @@ jint JNI_OnLoad(JavaVM* vm, void *reserved)
 
     jclass cls = (*env)->FindClass(env,JNI_CLASS_FFMPEG_BRIDGE);//通过类路径字符串找到对应类
     registerFFplayer(env,cls);
+    jni_onload_audioTrack_player(vm,env);
     LogE(TAG, DEBUG, "JNI_OnLoad success");
     return JNI_VERSION_1_4;
 }
@@ -69,8 +72,8 @@ void pcmDecode(JNIEnv* env, jobject obj)
 {
     LogE(TAG,DEBUG, "pcmDecode play_audio");
     pthread_t thread;
-    //pthread_create(&thread, NULL, decode_audio, NULL);
-    pthread_create(&thread, NULL, play_audio, NULL);
-    return ;
+    pthread_create(&thread, NULL, decode_audio, NULL);
+    // pthread_create(&thread, NULL, play_audio, NULL);
+    // return ;
 }
 

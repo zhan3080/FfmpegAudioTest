@@ -46,14 +46,16 @@ LOCAL_MODULE    := ffplayer
 #sourcecode for ffplayer
 LOCAL_SRC_FILES := \
     jniBridge.c \
-	openSLRender.c \
-
-#audioPlayer.c \
+	jni_utils.c \
+	audioTrackPlayer.c \
+	audioPlayer.c \
+#	openSLRender.c \
 
 LOCAL_C_INCLUDES := \
 	$(LOCAL_PATH) \
 	$(LOCAL_PATH)/logger.h \
-	$(LOCAL_PATH)/openSLRender.h
+	$(LOCAL_PATH)/openSLRender.h \
+	$(LOCAL_PATH)/jni_utils.h
 
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/include
 #LOCAL_C_INCLUDES += $(LOCAL_PATH)/include/libavfilter

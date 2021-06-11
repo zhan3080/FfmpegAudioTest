@@ -6,7 +6,8 @@ import android.media.AudioTrack;
 
 public class audioTrackPlayer {
 
-    private native long _create(Object[] args);
+    private native void _create();
+    AudioTrack audioTrack;
 
     public AudioTrack createAudioTrack(int sampleRateInHz, int channelsNB) {
 
@@ -22,12 +23,22 @@ public class audioTrackPlayer {
         }
         int bufferSizeInBytes = AudioTrack.getMinBufferSize(sampleRateInHz, channelConfig, audioFormat);
 
-        AudioTrack audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC,
+        audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC,
                 sampleRateInHz, channelConfig,
                 audioFormat, bufferSizeInBytes,
                 AudioTrack.MODE_STREAM);
 
         return audioTrack;
+    }
+
+    // native生成audioTrackPlayer全局对象的话，就需要这里提供封装
+    // native如果直接生成AudioTrack全局对象，这里没必要封装了
+    public int write(byte[] audioData, int offsetInBytes, int sizeInBytes){
+        return audioTrack.write(audioData,offsetInBytes,sizeInBytes);
+    }
+
+    public void create(){
+        _create();
     }
 
 }

@@ -13,6 +13,7 @@ public class MainActivity extends Activity {
     private static final String TAG = "MainActivity";
     public static String LIB_FFMPEG= "ffplayer";
     private Button startBtn;
+    private audioTrackPlayer audio;
 
     static {
         System.loadLibrary(LIB_FFMPEG);
@@ -34,6 +35,8 @@ public class MainActivity extends Activity {
         public void onClick(View v) {
             switch (v.getId()){
                 case R.id.stn_id:
+                    audio = new audioTrackPlayer();
+                    audio.create();
                     _pcmDecode();
                     break;
             }
