@@ -19,6 +19,7 @@
 
 
 extern void pcm_write(uint8_t *out_buffer, int out_buffer_size);
+extern void create_audiotrack(void);
 
 #define TEST_URL "/sdcard/t.mp4"
 #define OUTPUT_FILE "/sdcard/output.pcm"
@@ -170,6 +171,7 @@ void* decode_audio(void *argv)
              acodec_ctx->sample_rate, acodec_ctx->channels, acodec_ctx->sample_fmt, acodec_ctx->frame_size,acodec_ctx->channel_layout);
 
         initAudio(acodec_ctx);
+        create_audiotrack(); // audioTrackPlayerNative
         //9.创建存储编码数据和解码数据的结构体
         m_Packet = av_packet_alloc(); //创建 AVPacket 存放编码数据
         m_Frame = av_frame_alloc(); //创建 AVFrame 存放解码后的数据

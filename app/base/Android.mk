@@ -48,7 +48,9 @@ LOCAL_SRC_FILES := \
     jniBridge.c \
 	jni_utils.c \
 	audioTrackPlayer.c \
+	audioTrackPlayerNative.c\
 	audioPlayer.c \
+#	audioTrackPlayer.c \
 #	openSLRender.c \
 
 LOCAL_C_INCLUDES := \

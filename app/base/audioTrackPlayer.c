@@ -12,11 +12,6 @@
 
 #define JNI_CLASS_AUDIOTRACK_PLAYER     "com/example/ffmepgtest/pcm/application/audioTrackPlayer"
 
-#define OUTPUT_FILE "/sdcard/output.pcm"
-
-FILE *pcmFile;
-void *buffer;
-uint8_t *out_buffer;
 
 static void create(JNIEnv *pEnv, jobject jobjPlayer);
 
@@ -28,7 +23,7 @@ static const int AUDIO_DST_SAMPLE_RATE = 44100;
 // 音频编码通道数
 static const int AUDIO_DST_CHANNEL_COUNTS = 2;
 static JNIEnv *g_jEnv = NULL;
-static jobject mObject = NULL;
+static jobject g_mObject = NULL;
 
 
 static JNINativeMethod g_methods[] =
@@ -36,10 +31,11 @@ static JNINativeMethod g_methods[] =
     {"_create",             "()V",       (void *)create},
 };
 
-static void create(JNIEnv *pEnv, jobject jobjPlayer)
+static void create1(JNIEnv *pEnv, jobject jobjPlayer)
 {
     LogE(TAG, DEBUG, "create\n");
     jclass cls = (*pEnv)->FindClass(pEnv, JNI_CLASS_AUDIOTRACK_PLAYER);
+    //调用java层audioTrackPlayer（封装了AudioTrack）
     g_jMethodIdCreateAudioTrack = (*pEnv)->GetMethodID(pEnv, cls, "createAudioTrack",
                                                            "(II)Landroid/media/AudioTrack;");
     if (!g_jMethodIdCreateAudioTrack)
@@ -51,9 +47,9 @@ static void create(JNIEnv *pEnv, jobject jobjPlayer)
     LogE(TAG, DEBUG, "create: createAudioTrack");
 
     //这里保存全局变量，可以就可以多线程共享了
-    mObject = (*pEnv)->NewGlobalRef(pEnv, audio_track);
-    //jclass audio_track_class = (*pEnv)->GetObjectClass(pEnv, audio_track);
-    jclass audio_track_class = (*pEnv)->GetObjectClass(pEnv, mObject);
+    g_mObject = (*pEnv)->NewGlobalRef(pEnv, audio_track);
+    jclass audio_track_class = (*pEnv)->GetObjectClass(pEnv, audio_track);
+    // jclass audio_track_class = (*pEnv)->GetObjectClass(pEnv, g_mObject);
 
     
     g_jMethodIdAudioTrackPlay = (*pEnv)->GetMethodID(pEnv, audio_track_class, "play", "()V");
@@ -65,66 +61,45 @@ static void create(JNIEnv *pEnv, jobject jobjPlayer)
     (*pEnv)->CallVoidMethod(pEnv, audio_track, g_jMethodIdAudioTrackPlay);
     LogE(TAG, DEBUG, "create: play");
 
-    //jclass audio_track_clas = (*pEnv)->GetObjectClass(pEnv, mObject);
-    g_jMethodIdAudioTrackWrite = (*pEnv)->GetMethodID(pEnv, audio_track_class, "write",
-                                                          "([BII)I");
-    jbyteArray data_array = (*pEnv)->NewByteArray(pEnv, 3764);
-    jbyte *sample_byte = (*pEnv)->GetByteArrayElements(pEnv, data_array, NULL);
-    LogE(TAG, DEBUG, "create end\n");
-
-}
-
-
-static void create1(JNIEnv *pEnv, jobject jobjPlayer)
-{
-    LogE(TAG, DEBUG, "create\n");
-    jclass cls = (*pEnv)->FindClass(pEnv, "android/media/AudioTrack");
-    // g_jMethodIdCreateAudioTrack = (*pEnv)->GetMethodID(pEnv, cls, "createAudioTrack",
-                                                        //    "(II)Landroid/media/AudioTrack;");
-    // if (!g_jMethodIdCreateAudioTrack)
-    // {
-    //     LogE(TAG, DEBUG, "get method: onNotifyFromNative failed.");
-    // }
-    jmethodID g_jMethodIdInit = (*pEnv)->GetMethodID(pEnv, cls, "<init>",
-                                                           "(IIIIII)V");
-    jmethodID g_jMethodGetMinBufferSize = (*pEnv)->GetMethodID(pEnv, cls, "getMinBufferSize",
-                                                           "(III)I"); 
-    int bufferSizeInBytes = (*pEnv)->CallStaticIntMethod(pEnv, cls, g_jMethodGetMinBufferSize,AUDIO_DST_SAMPLE_RATE,(0x4 | 0x8),2);
-    LogE(TAG, DEBUG, "create: createAudioTrack");
-
-    mObject = (*pEnv)->NewObject(pEnv, cls, g_jMethodIdInit,
-                               3, AUDIO_DST_SAMPLE_RATE, (0x4 | 0x8), 2, bufferSizeInBytes, 1);
-
-
-    //这里保存全局变量，可以就可以多线程共享了
-    //mObject = (*pEnv)->NewGlobalRef(pEnv, audio_track);
-    //jclass audio_track_class = (*pEnv)->GetObjectClass(pEnv, audio_track);
-    jclass audio_track_class = (*pEnv)->GetObjectClass(pEnv, mObject);
-
-    
-    g_jMethodIdAudioTrackPlay = (*pEnv)->GetMethodID(pEnv, audio_track_class, "play", "()V");
-    if (!g_jMethodIdAudioTrackPlay)
+    // 1、 g_jMethodIdAudioTrackWrite可以audiotrack创建的时候保存到全局变量，也可以通过全局mObject来获取
+    if(g_jMethodIdAudioTrackWrite == NULL)
     {
-        LogE(TAG, DEBUG, "get method: play failed.");
+        g_jMethodIdAudioTrackWrite = (*pEnv)->GetMethodID(pEnv, audio_track_class, "write","([BII)I");
     }
- 
-    (*pEnv)->CallVoidMethod(pEnv, audio_track, g_jMethodIdAudioTrackPlay);
-    LogE(TAG, DEBUG, "create: play");
-
-    //jclass audio_track_clas = (*pEnv)->GetObjectClass(pEnv, mObject);
-    g_jMethodIdAudioTrackWrite = (*pEnv)->GetMethodID(pEnv, audio_track_class, "write",
-                                                          "([BII)I");
-    jbyteArray data_array = (*pEnv)->NewByteArray(pEnv, 3764);
-    jbyte *sample_byte = (*pEnv)->GetByteArrayElements(pEnv, data_array, NULL);
     LogE(TAG, DEBUG, "create end\n");
 
 }
-  
+
+// static void create(JNIEnv *pEnv, jobject jobjPlayer)
+// {
+//    LogE(TAG, DEBUG, "create\n");
+//     jclass cls = (*pEnv)->FindClass(pEnv, "android/media/AudioTrack");
+//     jmethodID g_jMethodIdInit = (*pEnv)->GetMethodID(pEnv, cls, "<init>",
+//                                                            "(IIIIII)V");
+//     jmethodID g_jMethodGetMinBufferSize = (*pEnv)->GetMethodID(pEnv, cls, "getMinBufferSize",
+//                                                            "(III)I"); 
+//     int bufferSizeInBytes = (*pEnv)->CallStaticIntMethod(pEnv, cls, g_jMethodGetMinBufferSize,AUDIO_DST_SAMPLE_RATE,(0x4 | 0x8),2);
+//     LogE(TAG, DEBUG, "create: createAudioTrack");
+
+//     g_mObject = (*pEnv)->NewObject(pEnv, cls, g_jMethodIdInit,
+//                                3, AUDIO_DST_SAMPLE_RATE, (0x4 | 0x8), 2, bufferSizeInBytes, 1);
+//     jclass audio_track_class = (*pEnv)->GetObjectClass(pEnv, g_mObject);
+
+//     g_jMethodIdAudioTrackPlay = (*pEnv)->GetMethodID(pEnv, audio_track_class, "play", "()V");
+//     (*pEnv)->CallVoidMethod(pEnv, audio_track, g_jMethodIdAudioTrackPlay);
+//     LogE(TAG, DEBUG, "create: play");
+//     g_jMethodIdAudioTrackWrite = (*pEnv)->GetMethodID(pEnv, audio_track_class, "write",
+//                                                           "([BII)I");
+//     jbyteArray data_array = (*pEnv)->NewByteArray(pEnv, 3764);
+//     jbyte *sample_byte = (*pEnv)->GetByteArrayElements(pEnv, data_array, NULL);
+//      LogE(TAG, DEBUG, "create end\n");
+//  }
+
+
 
 void pcm_write(uint8_t *out_buffer, int out_buffer_size){
     LogI(TAG, DEBUG, "pcm_write out_buffer_size:%d",out_buffer_size);
     JNIEnv *env = NULL;
-    //JNI_GET_ENV_OR_RETURN_VOID(env);
     env = ff_jni_get_env();
   
     LogI(TAG, DEBUG, "pcm_write out_buffer 缓冲数据，转成byte数组");
@@ -139,14 +114,16 @@ void pcm_write(uint8_t *out_buffer, int out_buffer_size){
     (*env)->ReleaseByteArrayElements(env, data_array, sample_byte, 0);
     LogE(TAG, DEBUG, "pcm_write write:%d",out_buffer_size);
 
-    // 这个g_jMethodIdAudioTrackWrite也可以通过全局mObject来获取
-    // jclass audio_track_class = (*env)->GetObjectClass(env, mObject);
-    // g_jMethodIdAudioTrackWrite = (*env)->GetMethodID(env, audio_track_class, "write",
-    //                                                       "([BII)I");
+    // 2、 g_jMethodIdAudioTrackWrite可以通过全局mObject来获取，也可以在audiotrack创建的时候保存到全局变量
+    if(g_jMethodIdAudioTrackWrite == NULL)
+    {
+        jclass audio_track_class = (*env)->GetObjectClass(env, g_mObject);
+        g_jMethodIdAudioTrackWrite = (*env)->GetMethodID(env, audio_track_class, "write","([BII)I");
+    }
+    
 
-    LogE(TAG, DEBUG, "pcm_write write --- :%d",out_buffer_size);
     //将pcm的数据写入AudioTrack
-    (*env)->CallIntMethod(env, mObject, g_jMethodIdAudioTrackWrite, data_array, 0,
+    (*env)->CallIntMethod(env, g_mObject, g_jMethodIdAudioTrackWrite, data_array, 0,
                                       out_buffer_size);
 
     LogE(TAG, DEBUG, "pcm_write write end");

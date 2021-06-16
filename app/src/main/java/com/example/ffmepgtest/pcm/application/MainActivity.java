@@ -13,7 +13,8 @@ public class MainActivity extends Activity {
     private static final String TAG = "MainActivity";
     public static String LIB_FFMPEG= "ffplayer";
     private Button startBtn;
-    private audioTrackPlayer audio;
+    private Button playPcmBtn1;
+    private Button playPcmBtn2;
 
     static {
         System.loadLibrary(LIB_FFMPEG);
@@ -27,6 +28,10 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
         startBtn = findViewById(R.id.stn_id);
         startBtn.setOnClickListener(listener);
+        playPcmBtn1 = findViewById(R.id.pcm_id1);
+        playPcmBtn1.setOnClickListener(listener);
+        playPcmBtn2 = findViewById(R.id.pcm_id2);
+        playPcmBtn2.setOnClickListener(listener);
         checkPermission();
     }
 
@@ -35,9 +40,13 @@ public class MainActivity extends Activity {
         public void onClick(View v) {
             switch (v.getId()){
                 case R.id.stn_id:
-                    audio = new audioTrackPlayer();
-                    audio.create();
                     _pcmDecode();
+                    break;
+                case R.id.pcm_id1:
+                    audioTrackPlayer audio = new audioTrackPlayer();
+                    audio.create();
+                    break;
+                case R.id.pcm_id2:
                     break;
             }
         }

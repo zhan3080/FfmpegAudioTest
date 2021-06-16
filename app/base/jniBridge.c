@@ -51,7 +51,7 @@ jint JNI_OnLoad(JavaVM* vm, void *reserved)
 
     jclass cls = (*env)->FindClass(env,JNI_CLASS_FFMPEG_BRIDGE);//通过类路径字符串找到对应类
     registerFFplayer(env,cls);
-    jni_onload_audioTrack_player(vm,env);
+    // jni_onload_audioTrack_player(vm,env); //audioTrackPlayer
     LogE(TAG, DEBUG, "JNI_OnLoad success");
     return JNI_VERSION_1_4;
 }
