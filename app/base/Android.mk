@@ -47,7 +47,6 @@ LOCAL_MODULE    := ffplayer
 LOCAL_SRC_FILES := \
     jniBridge.c \
 	jni_utils.c \
-	audioTrackPlayer.c \
 	audioTrackPlayerNative.c\
 	audioPlayer.c \
 #	audioTrackPlayer.c \

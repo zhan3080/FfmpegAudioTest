@@ -31,7 +31,7 @@ static JNINativeMethod g_methods[] =
     {"_create",             "()V",       (void *)create},
 };
 
-static void create1(JNIEnv *pEnv, jobject jobjPlayer)
+static void create(JNIEnv *pEnv, jobject jobjPlayer)
 {
     LogE(TAG, DEBUG, "create\n");
     jclass cls = (*pEnv)->FindClass(pEnv, JNI_CLASS_AUDIOTRACK_PLAYER);
@@ -69,32 +69,6 @@ static void create1(JNIEnv *pEnv, jobject jobjPlayer)
     LogE(TAG, DEBUG, "create end\n");
 
 }
-
-// static void create(JNIEnv *pEnv, jobject jobjPlayer)
-// {
-//    LogE(TAG, DEBUG, "create\n");
-//     jclass cls = (*pEnv)->FindClass(pEnv, "android/media/AudioTrack");
-//     jmethodID g_jMethodIdInit = (*pEnv)->GetMethodID(pEnv, cls, "<init>",
-//                                                            "(IIIIII)V");
-//     jmethodID g_jMethodGetMinBufferSize = (*pEnv)->GetMethodID(pEnv, cls, "getMinBufferSize",
-//                                                            "(III)I"); 
-//     int bufferSizeInBytes = (*pEnv)->CallStaticIntMethod(pEnv, cls, g_jMethodGetMinBufferSize,AUDIO_DST_SAMPLE_RATE,(0x4 | 0x8),2);
-//     LogE(TAG, DEBUG, "create: createAudioTrack");
-
-//     g_mObject = (*pEnv)->NewObject(pEnv, cls, g_jMethodIdInit,
-//                                3, AUDIO_DST_SAMPLE_RATE, (0x4 | 0x8), 2, bufferSizeInBytes, 1);
-//     jclass audio_track_class = (*pEnv)->GetObjectClass(pEnv, g_mObject);
-
-//     g_jMethodIdAudioTrackPlay = (*pEnv)->GetMethodID(pEnv, audio_track_class, "play", "()V");
-//     (*pEnv)->CallVoidMethod(pEnv, audio_track, g_jMethodIdAudioTrackPlay);
-//     LogE(TAG, DEBUG, "create: play");
-//     g_jMethodIdAudioTrackWrite = (*pEnv)->GetMethodID(pEnv, audio_track_class, "write",
-//                                                           "([BII)I");
-//     jbyteArray data_array = (*pEnv)->NewByteArray(pEnv, 3764);
-//     jbyte *sample_byte = (*pEnv)->GetByteArrayElements(pEnv, data_array, NULL);
-//      LogE(TAG, DEBUG, "create end\n");
-//  }
-
 
 
 void pcm_write(uint8_t *out_buffer, int out_buffer_size){

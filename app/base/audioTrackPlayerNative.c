@@ -7,7 +7,7 @@
 #include "libavfilter/avfilter.h"
 #include "libswscale/swscale.h"
 
-#define TAG "audioTrackPlayer"
+#define TAG "audioTrackPlayerNative"
 #define DEBUG true
 
 
@@ -30,26 +30,14 @@ void create_audiotrack(void)
     pEnv = ff_jni_get_env();
     //直接调用系统类AudioTrack
     jclass cls = (*pEnv)->FindClass(pEnv, "android/media/AudioTrack");
-    LogE(TAG, DEBUG, "create: NewObject1");
-    jmethodID g_jMethodIdInit = (*pEnv)->GetMethodID(pEnv, cls, "<init>",
-                                                           "(IIIIII)V");
-    LogE(TAG, DEBUG, "create: NewObject2");
-    jmethodID g_jMethodGetMinBufferSize = (*pEnv)->GetMethodID(pEnv, cls, "getMinBufferSize",
-                                                           "(III)I");
+    jmethodID g_jMethodIdInit = (*pEnv)->GetMethodID(pEnv, cls, "<init>", "(IIIIII)V");
+    jmethodID g_jMethodGetMinBufferSize = (*pEnv)->GetStaticMethodID(pEnv, cls, "getMinBufferSize","(III)I");
     int bufferSizeInBytes = (*pEnv)->CallStaticIntMethod(pEnv, cls, g_jMethodGetMinBufferSize,AUDIO_DST_SAMPLE_RATE,(0x4 | 0x8),2);
-    LogE(TAG, DEBUG, "create: NewObject");
 
     g_mObject = (*pEnv)->NewObject(pEnv, cls, g_jMethodIdInit,
                                3, AUDIO_DST_SAMPLE_RATE, (0x4 | 0x8), 2, bufferSizeInBytes, 1);
-
-
-    //这里保存全局变量，可以就可以多线程共享了
-    //g_mObject = (*pEnv)->NewGlobalRef(pEnv, audio_track);
-    //jclass audio_track_class = (*pEnv)->GetObjectClass(pEnv, audio_track);
-    jclass audio_track_class = (*pEnv)->GetObjectClass(pEnv, g_mObject);
-
     
-    g_jMethodIdAudioTrackPlay = (*pEnv)->GetMethodID(pEnv, audio_track_class, "play", "()V");
+    g_jMethodIdAudioTrackPlay = (*pEnv)->GetMethodID(pEnv, cls, "play", "()V");
     if (!g_jMethodIdAudioTrackPlay)
     {
         LogE(TAG, DEBUG, "get method: play failed.");
@@ -59,7 +47,7 @@ void create_audiotrack(void)
     LogE(TAG, DEBUG, "create: play");
     if(g_jMethodIdAudioTrackWrite == NULL)
     {
-        g_jMethodIdAudioTrackWrite = (*pEnv)->GetMethodID(pEnv, audio_track_class, "write","([BII)I");
+        g_jMethodIdAudioTrackWrite = (*pEnv)->GetMethodID(pEnv, cls, "write","([BII)I");
     }
     LogE(TAG, DEBUG, "create end\n");
 
